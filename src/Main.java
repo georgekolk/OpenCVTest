@@ -7,8 +7,6 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import java.awt.image.DataBufferByte;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.awt.Robot;
@@ -18,8 +16,6 @@ import javax.sound.sampled.*;
 
 public class Main {
 
-    static boolean reeled = false;
-    static boolean exitFlag = false;
     static Random random = new Random();
 
     public static void main(String[] args) throws AWTException, IOException, InterruptedException, LineUnavailableException {
@@ -47,17 +43,18 @@ public class Main {
 
             System.out.println("region: " + region);
             Core.MinMaxLocResult mmrPart = Core.minMaxLoc(resultPart);
+
             do{
-            // Робимо скріншот тільки цієї області
-            BufferedImage screenPart = robot.createScreenCapture(new Rectangle(region.x, region.y, region.width, region.height));
-            File regionScreenFile = new File("region_screenshot.png");
-            ImageIO.write(screenPart, "png", regionScreenFile);
-            Mat imgPart = Imgcodecs.imread("region_screenshot.png", Imgproc.COLOR_BGR2GRAY);;
+                // Робимо скріншот тільки цієї області
+                BufferedImage screenPart = robot.createScreenCapture(new Rectangle(region.x, region.y, region.width, region.height));
+                File regionScreenFile = new File("region_screenshot.png");
+                ImageIO.write(screenPart, "png", regionScreenFile);
+                Mat imgPart = Imgcodecs.imread("region_screenshot.png", Imgproc.COLOR_BGR2GRAY);;
 
-            // Порівняння з оригінальним шаблоном
+                // Порівняння з оригінальним шаблоном
 
-            Imgproc.matchTemplate(imgPart, template, resultPart, Imgproc.TM_CCOEFF_NORMED);
-            mmrPart = Core.minMaxLoc(resultPart);
+                Imgproc.matchTemplate(imgPart, template, resultPart, Imgproc.TM_CCOEFF_NORMED);
+                mmrPart = Core.minMaxLoc(resultPart);
 
             // Якщо значення схожості впало → об’єкт змінився
 
@@ -100,23 +97,6 @@ public class Main {
             matchLoc = mmr.maxLoc;
             System.out.println("Знайдено на екрані в координатах: " + matchLoc);
 
-
-            /*Mat imgDisplay = img.clone();
-
-            // Малюємо прямокутник навколо збігу
-            Imgproc.rectangle(
-                    imgDisplay,
-                    matchLoc,
-                    new Point(matchLoc.x + template.width(), matchLoc.y + template.height()),
-                    new Scalar(0, 255, 0), // зелений колір
-                    2                     // товщина лінії
-            );
-            BufferedImage imgOut = matToBufferedImage(imgDisplay );
-            JFrame frame = new JFrame("Result");
-            frame.getContentPane().add(new JLabel(new ImageIcon(imgOut)));
-            frame.pack();
-            frame.setVisible(true);*/
-
             // 4. Рухаємось мишкою в це місце
             robot.mouseMove((int)matchLoc.x + template.width()/2,
                     (int)matchLoc.y + template.height()/2);
@@ -128,23 +108,4 @@ public class Main {
         return matchLoc;
     }
 
-    public static BufferedImage matToBufferedImage(Mat mat) {
-        int type = BufferedImage.TYPE_BYTE_GRAY;
-        if (mat.channels() > 1) {
-            type = BufferedImage.TYPE_3BYTE_BGR;
-        }
-        byte[] b = new byte[mat.channels() * mat.cols() * mat.rows()];
-        mat.get(0, 0, b);
-        BufferedImage image = new BufferedImage(mat.cols(), mat.rows(), type);
-        image.getRaster().setDataElements(0, 0, mat.cols(), mat.rows(), b);
-        return image;
-    }
-
-    public static Mat bufferedImageToMat(BufferedImage bi) {
-        int type = bi.getType() == BufferedImage.TYPE_BYTE_GRAY ? CvType.CV_8UC1 : CvType.CV_8UC3;
-        Mat mat = new Mat(bi.getHeight(), bi.getWidth(), type);
-        byte[] data = ((DataBufferByte) bi.getRaster().getDataBuffer()).getData();
-        mat.put(0, 0, data);
-        return mat;
-    }
 }
